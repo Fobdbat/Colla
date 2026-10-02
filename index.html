@@ -60,6 +60,17 @@ canvas{display:block;border-radius:12px;touch-action:none;background:var(--ink);
 .card .warn{color:var(--hot)}
 .card .score{font-variant-numeric:tabular-nums;font-size:15px;color:var(--muted)}
 .card .row{justify-content:center}
+.how{text-align:left;gap:12px}
+.how .head{display:flex;gap:12px;align-items:center}
+.how .head img{width:56px;height:56px;flex:none}
+.how .head b{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.1;color:var(--neon);display:block}
+.how .head small{color:var(--muted);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.how .goal{background:var(--ink);border-radius:10px;padding:10px 12px;font-size:14.5px}
+.how ol{margin:0;padding-left:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:s}
+.how li{display:grid;grid-template-columns:26px 1fr;gap:10px;font-size:14.5px;line-height:1.4;counter-increment:s}
+.how li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--neon);color:#2a1a05;font-weight:700;display:grid;place-items:center;font-size:13px}
+.how .tip{font-size:13px;color:var(--muted)}
+.how button{align-self:stretch;font-size:16px;padding:12px}
 </style>
 
 <div id="app">
@@ -89,6 +100,7 @@ canvas{display:block;border-radius:12px;touch-action:none;background:var(--ink);
       <button class="ghost" id="quit">← Mapa</button>
       <div class="t" id="gTitle"></div>
       <div id="hud"></div>
+      <button class="ghost" id="help" aria-label="Com es juga">?</button>
       <button class="ghost" id="mute" aria-pressed="false">♪ So</button>
     </div>
     <div id="stage"><canvas id="cv" aria-label="Pantalla de joc"></canvas></div>
@@ -125,12 +137,12 @@ const CH=[
      ['xavi','Fàcil','Va a poc a poc. I surt tard, com sempre.'],
      ['dario','Mitjà','El cotxe fa saltirons difícils de controlar i ell renega a cada sot.'],
      ['bere','Infern','Va a tota velocitat i el cotxe tira cap a un costat.']]},
-  {id:'mush',title:'Bolets a Els Traginers',sub:'Collir, cuinar i servir',
-   intro:"En Ferran ha anat a buscar bolets. Si n'aplega deu, en Toni els cuinarà a Els Traginers i en Garcia els servirà a la colla, amb Los Llopis de fons.",
+  {id:'mush',title:'Bolets a Els Traginers',sub:'Plataformes, ritme i equilibri',
+   intro:"En Ferran ha anat a buscar bolets. El que culli, en Toni ho cuinarà a Els Traginers al ritme de la música, i en Garcia ho servirà a la colla fent equilibris.",
    team:[
-     ['ferran','1. Collir','Recull 10 bolets bons. Compte amb els pixacans!'],
-     ['toni','2. Cuinar','Treu-los de la paella quan siguin al punt (zona verda).'],
-     ['garcia','3. Servir','Porta els plats a les taules abans que la colla perdi la paciència.']]}
+     ['ferran','1. Collir','Corre pel bosc, salta troncs i rierols i destapa els bolets amagats sota les fulles.'],
+     ['toni','2. Cuinar','Oli, all i bolets al ritme de la música. Com més encertis, millor surt el plat.'],
+     ['garcia','3. Servir','Porta torres de plats fins a la taula sense que caiguin.']]}
 ];
 
 /* ---------- Utilitats ---------- */
@@ -401,210 +413,228 @@ function DriveGame(who){
 }
 
 /* =========================================================
-   Capítol 3 — Bolets: Ferran cull, Toni cuina, Garcia serveix
+   Capítol 3 — Bolets: Ferran (plataformes), Toni (ritme), Garcia (equilibri)
    ========================================================= */
-const GOOD=[{n:'Rovelló',c:'#e2702a',i:0,cook:5},{n:'Cep',c:'#7a4a24',i:1,cook:7},{n:'Camagroc',c:'#e6b63a',i:2,cook:4}],BAD={n:'Pixacà',c:'#d0302c',bad:1};
+const GOOD=[{n:'Rovelló',c:'#e2702a',i:0},{n:'Cep',c:'#7a4a24',i:1},{n:'Camagroc',c:'#e6b63a',i:2}],BAD={n:'Pixacà',c:'#d0302c',bad:1,i:3};
 function mixc(a,b,t){const p=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));const A=p(a),B=p(b);return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*clamp(t,0,1))).join(',')})`}
-function drawMush(x,y,s,m,rot=0,cookP=-1){g.save();g.translate(x,y);g.rotate(rot);
-  let cap=m.c,stem='#f1e4c6';if(cookP>=0){cap=cookP<.6?mixc('#e8d2a8',m.c,cookP/.6):cookP<.9?mixc(m.c,'#8a4a1a',(cookP-.6)/.3):mixc('#8a4a1a','#1d1410',(cookP-.9)/.1);stem=cookP<.9?'#e8c890':'#3a2a20'}
-  g.fillStyle=stem;rr(-s*.22,-s*.1,s*.44,s*.6,s*.12);g.fill();g.fillStyle=cap;g.beginPath();g.ellipse(0,-s*.1,s*.6,s*.42,0,Math.PI,0);g.fill();
+function drawMush(x,y,s,m,rot=0,gold=false){g.save();g.translate(x,y);g.rotate(rot);
+  g.fillStyle=gold?'#fff3b0':'#f1e4c6';rr(-s*.22,-s*.1,s*.44,s*.6,s*.12);g.fill();g.fillStyle=gold?'#ffd23a':m.c;g.beginPath();g.ellipse(0,-s*.1,s*.6,s*.42,0,Math.PI,0);g.fill();
+  if(gold){g.strokeStyle='#fff';g.lineWidth=2;g.stroke()}
   if(m.bad){g.fillStyle='#fff';[[-.3,-.3],[.1,-.38],[.32,-.2],[-.05,-.2]].forEach(([a,b])=>{circ(a*s,b*s,s*.07);g.fill()})}g.restore()}
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function setHint(s){$('hint').textContent=s}
+const BEAT=0.40909,BEAT0=1.2756; // tempo mesurat de la pista: 146,7 BPM
 
 function MushGame(){
-  let ph=1,T=0,toast=null,inter=0,interTxt='',interFrom='ferran',interTo='toni',score=0,over=false;
-  // Fase 1 — Ferran
-  let bx=240,count=0,items=[],spT=0,caught=[0,0,0];
-  // Fase 2 — Toni
-  let stock=[0,0,0],pans=[],tickets=[],tkQueue=[],tkT=0,drag=null,done=[],burnt=0,missed=0,tableNo=1,speech=null;
-  const TK=[18,170,322],PX=[90,240,390],PY=360,SLOT_Y=625;
-  // Fase 3 — Garcia
-  let G=null;
+  let ph=1,T=0,toast=null,inter=0,interTxt='',interFrom='ferran',interTo='toni',score=0,over=false,pops=[];
   function finish(win,title,msg){if(over)return;over=true;setTimeout(()=>endGame('mush',win,score,title,msg),900)}
-  function goInter(s,from,to,next){inter=2.6;interTxt=s;interFrom=from;interTo=to;ph=next}
+  function goInter(s,from,to,next){inter=2.8;interTxt=s;interFrom=from;interTo=to;ph=next}
+  function pop(s,x,y,c='#ffd27a'){pops.push({s,x,y,c,t:.9})}
 
-  /* ---- Fase 2 ---- */
-  function startToni(){ph=2;stock=caught.slice();
-    tkQueue=shuffle(caught.flatMap((n,i)=>Array(n).fill(i)));
-    pans=PX.map(x=>({x,y:PY,s:'empty',p:0,type:0,rate:0,flare:false,flip:0,bt:0}));tkT=.6;
-    speech={s:'Oli, all i julivert. Som-hi!',t:2.4}}
-  function panAt(x,y){return pans.find(p=>Math.hypot(x-p.x,y-p.y)<70)}
-  function ticketAt(x,y){return tickets.find(t=>x>t.x&&x<t.x+140&&y>80&&y<190)}
-  function slotAt(x,y){for(let i=0;i<3;i++)if(Math.abs(x-PX[i])<70&&Math.abs(y-SLOT_Y)<60)return i;return -1}
-  function toniDown(x,y){
-    const s=slotAt(x,y);if(s>=0){if(stock[s]>0){drag={kind:'raw',type:s,x,y}}else toast={s:`No queden ${GOOD[s].n.toLowerCase()}s`,t:.9};return}
-    const p=panAt(x,y);if(!p)return;
-    if(p.s==='cook'){if(p.flare){p.flare=false;p.flip=.45;score+=15;toast={s:'Saltejat!',t:.6};return}
-      if(p.p<.6){toast={s:'Encara és cru!',t:.8,warn:true};return}
-      drag={kind:'cooked',type:p.type,pan:p,x,y}}
-    else if(p.s==='empty')toast={s:'Arrossega un bolet de la cistella a la paella',t:1.1}}
-  function toniUp(x,y){if(!drag)return;const d=drag;drag=null;
-    if(d.kind==='raw'){const p=panAt(x,y);if(p&&p.s==='empty'){stock[d.type]--;Object.assign(p,{s:'cook',p:0,type:d.type,rate:1/GOOD[d.type].cook,flare:false,flip:0})}
-      else if(p)toast={s:'Aquesta paella està ocupada',t:.8}}
-    else{const t=ticketAt(x,y);const p=d.pan;if(p.s!=='cook')return;
-      if(!t)return;
-      if(t.type!==d.type){toast={s:`La taula ${t.no} ha demanat ${GOOD[t.type].n.toLowerCase()}`,t:1.1,warn:true};return}
-      const perfect=p.p>=.68&&p.p<=.84;score+=80+(perfect?50:0)+Math.round(t.pat*2);done.push(d.type);
-      toast={s:perfect?'Al punt! Perfecte':'Plat llest',t:.8};p.s='empty';tickets=tickets.filter(q=>q!==t)}}
-  function toniUpdate(dt){
-    if(speech)speech.t-=dt;
-    tkT-=dt;if(tkT<=0&&tickets.length<3&&tkQueue.length){const used=TK.filter(x=>!tickets.some(t=>t.x===x));tickets.push({x:used[0],type:tkQueue.shift(),pat:24,max:24,no:tableNo++});tkT=rand(2.5,4)}
-    const nothingLeft=stock.every(n=>n===0)&&pans.every(p=>p.s!=='cook')&&!drag;
-    for(const t of tickets){t.pat-=dt*(nothingLeft?5:1);if(t.pat<=0){missed++;toast={s:`La taula ${t.no} s'ha cansat d'esperar`,t:1.1,warn:true}}}
-    tickets=tickets.filter(t=>t.pat>0);
-    for(const p of pans){if(p.flip>0)p.flip-=dt;
-      if(p.s==='cook'){p.p+=p.rate*dt*(p.flare?1.8:1);
-        if(!p.flare&&p.p>.15&&p.p<.75&&Math.random()<dt*.18)p.flare=true;
-        if(p.p>=1){p.s='burnt';p.bt=1;p.flare=false;burnt++;if(drag&&drag.pan===p)drag=null;toast={s:"S'ha cremat!",t:1,warn:true}}}
-      else if(p.s==='burnt'){p.bt-=dt;if(p.bt<=0)p.s='empty'}}
-    if(!tkQueue.length&&!tickets.length&&pans.every(p=>p.s!=='cook')){
-      if(!done.length)finish(false,'Cuina tancada','Cap comanda ha sortit de la cuina. Avui toca pa amb tomàquet.');
-      else goInter(`${done.length} plats a punt. Ara en Garcia els ha de servir!`,'toni','garcia',2.5)}
-    setHud(`Plats ${done.length} · Cremats ${burnt}`)}
-  function toniDraw(){
-    g.fillStyle='#ece5d6';g.fillRect(0,0,W,H);g.strokeStyle='rgba(0,0,0,.07)';g.lineWidth=1;
-    for(let x=0;x<W;x+=32){g.beginPath();g.moveTo(x,0);g.lineTo(x,H);g.stroke()}for(let y=0;y<H;y+=32){g.beginPath();g.moveTo(0,y);g.lineTo(W,y);g.stroke()}
-    drawFace(42,50,22,'toni');txt('CUINA · ELS TRAGINERS',260,30,15,'#3b2a1c','center','d','400');txt('Arrossega bolets a les paelles i els plats a les comandes',260,54,12,'#5a4a3a');
-    // rail de comandes
-    g.fillStyle='#8a8f9c';g.fillRect(0,76,W,6);
-    for(let i=0;i<3;i++){const t=tickets.find(q=>q.x===TK[i]);if(!t){g.strokeStyle='rgba(0,0,0,.15)';g.setLineDash([5,5]);rr(TK[i],88,140,100,6);g.stroke();g.setLineDash([]);continue}
-      const hl=drag&&drag.kind==='cooked'&&drag.type===t.type;g.fillStyle=hl?'#fff7d6':'#fffdf6';rr(t.x,88,140,100,6);g.fill();g.strokeStyle=hl?'#5fd3b3':'rgba(0,0,0,.2)';g.lineWidth=hl?3:1;g.stroke();
-      txt(`TAULA ${t.no}`,t.x+70,104,12,'#6a5a4a');drawMush(t.x+38,148,34,GOOD[t.type]);txt(GOOD[t.type].n,t.x+92,146,14,'#2b2d36');
-      g.fillStyle='rgba(0,0,0,.12)';rr(t.x+12,172,116,7,3);g.fill();g.fillStyle=t.pat/t.max>.35?'#3fae8f':'#e0503a';rr(t.x+12,172,116*t.pat/t.max,7,3);g.fill()}
-    // fogons
-    g.fillStyle='#2b2d36';rr(14,236,452,250,18);g.fill();
-    for(const p of pans){g.save();
-      const fy=p.flip>0?-Math.sin((1-p.flip/.45)*Math.PI)*24:0;
-      g.fillStyle='#ff7a2a';for(let k=0;k<6;k++){const a=k/6*Math.PI*2+T*3;circ(p.x+Math.cos(a)*48,p.y+Math.sin(a)*48,p.s==='cook'?5:2);g.fill()}
-      g.fillStyle='#555';g.fillRect(p.x-6,p.y+fy+46,12,58);
-      g.fillStyle='#16171c';circ(p.x,p.y+fy,58);g.fill();g.fillStyle='#3a3b44';circ(p.x,p.y+fy,50);g.fill();
-      const a0=-Math.PI/2;g.lineWidth=7;g.strokeStyle='rgba(255,255,255,.12)';circ(p.x,p.y,68);g.stroke();
-      g.strokeStyle='#5fd3b3';g.beginPath();g.arc(p.x,p.y,68,a0+Math.PI*2*.6,a0+Math.PI*2*.9);g.stroke();
-      if(p.s==='cook'){g.strokeStyle='#ffb43b';g.lineWidth=4;g.beginPath();g.arc(p.x,p.y,68,a0,a0+Math.PI*2*Math.min(1,p.p));g.stroke();
-        if(!(drag&&drag.pan===p))drawMush(p.x,p.y+fy+8,50,GOOD[p.type],0,p.p);
-        if(p.flare){for(let k=0;k<7;k++){const fx=p.x+rand(-34,34),h=rand(20,46);g.fillStyle=k%2?'#ffb43b':'#ff5a2a';g.beginPath();g.moveTo(fx-9,p.y-18);g.quadraticCurveTo(fx,p.y-18-h*1.4,fx+9,p.y-18);g.fill()}
-          g.fillStyle='#ff5a2a';rr(p.x-48,p.y-96,96,24,8);g.fill();txt('TOCA! FLAMA',p.x,p.y-84,12,'#fff')}
-        else if(p.p>=.6&&p.p<.9){txt('A punt!',p.x,p.y-84,13,'#5fd3b3')}}
-      if(p.s==='burnt'){drawMush(p.x,p.y+8,50,GOOD[p.type],0,1);g.fillStyle='rgba(70,70,70,.55)';circ(p.x,p.y-34-(1-p.bt)*30,22);g.fill()}
-      if(p.s==='empty'){txt(drag&&drag.kind==='raw'?'Deixa\'l aquí':'Buida',p.x,p.y,13,'rgba(255,255,255,.4)')}
-      g.restore()}
-    // cistella
-    g.fillStyle='#b98a52';rr(14,560,452,130,18);g.fill();g.fillStyle='#a07440';for(let y=575;y<690;y+=16)g.fillRect(24,y,432,4);
-    for(let i=0;i<3;i++){const n=stock[i];g.globalAlpha=n?1:.35;drawMush(PX[i],SLOT_Y,58,GOOD[i]);g.globalAlpha=1;
-      g.fillStyle='#2b2d36';rr(PX[i]+18,SLOT_Y+14,40,26,8);g.fill();txt('×'+n,PX[i]+38,SLOT_Y+27,15,'#fff');txt(GOOD[i].n,PX[i],SLOT_Y+50,12,'#3b2a1c')}
-    if(drag){if(drag.kind==='raw')drawMush(drag.x,drag.y,56,GOOD[drag.type]);else{g.fillStyle='#fff';circ(drag.x,drag.y,34);g.fill();drawMush(drag.x,drag.y+6,46,GOOD[drag.type],0,drag.pan.p)}}
-    if(speech&&speech.t>0){g.font='700 13px Rubik, system-ui, sans-serif';const w=g.measureText(speech.s).width+20;g.fillStyle='#2b2d36';rr(72,58,w,26,9);g.fill();txt(speech.s,72+w/2,71,13,'#fff')}
+  /* ================= FERRAN: boletaire al bosc ================= */
+  const GROUND=600,PX=120,DUR=55;
+  const F1={wx:0,py:GROUND,vy:0,ground:true,air:1,speed:250,t:0,segs:[],nextX:520,bolets:0,last:-1,streak:0,mult:1,dizzy:0,hurt:0,gold:false,leaves:[],legs:0};
+  function gen(){while(F1.nextX<F1.wx+800){const x=F1.nextX,r=Math.random();let w=0;
+      if(F1.t>36&&!F1.gold){F1.gold=true;F1.segs.push({k:'gold',x,y:GROUND-230});F1.segs.push({k:'log',x:x-20,w:40,h:36});w=60}
+      else if(r<.42){const q=Math.random();F1.segs.push({k:'pile',x,type:q<.42?0:q<.64?1:q<.82?2:3,rev:false,got:false});w=40}
+      else if(r<.6){F1.segs.push({k:'log',x,w:40,h:36});w=40}
+      else if(r<.75){const gw=rand(80,135);F1.segs.push({k:'gap',x,w:gw});w=gw}
+      else if(r<.9){F1.segs.push({k:'bush',x,w:54,h:34});w=54}
+      else if(F1.t>10){F1.segs.push({k:'rival',x:x+200,w:34});w=60}
+      else{F1.segs.push({k:'pile',x,type:0,rev:false,got:false});w=40}
+      F1.nextX=x+w+rand(170,290)}}
+  function overGap(){return F1.segs.some(s=>s.k==='gap'&&F1.wx>s.x+12&&F1.wx<s.x+s.w-12)}
+  function jump(){if(F1.ground){F1.vy=F1.dizzy>0?-600:-790;F1.ground=false}else if(F1.air>0){F1.vy=F1.dizzy>0?-520:-700;F1.air--}}
+  function loseBolets(n,msg){F1.bolets=Math.max(0,F1.bolets-n);F1.streak=0;F1.mult=1;F1.hurt=1.1;toast={s:msg,t:1.3,warn:true}}
+  function reveal(p){p.rev=true;for(let i=0;i<10;i++)F1.leaves.push({x:p.x,y:GROUND-14,vx:rand(-120,120),vy:rand(-320,-120),t:.8,c:choice(['#c0702a','#8a5a20','#d9a03a'])})}
+  function ferranDown(x,y){const wx=F1.wx-PX+x;const p=F1.segs.find(s=>s.k==='pile'&&!s.rev&&Math.abs(s.x-wx)<48&&y>GROUND-110&&y<GROUND+50&&s.x>F1.wx-10);if(p)reveal(p);else jump()}
+  function ferranKey(k){if(k===' '||k==='ArrowUp'||k==='w'||k==='W')jump();if(k==='ArrowDown'||k==='s'||k==='S'){const p=F1.segs.filter(s=>s.k==='pile'&&!s.rev&&s.x>F1.wx&&s.x<F1.wx+340).sort((a,b)=>a.x-b.x)[0];if(p)reveal(p)}}
+  function ferranUpdate(dt){const S=F1;S.t+=dt;S.speed=Math.min(335,250+S.t*1.6);S.wx+=S.speed*dt;S.legs+=dt*S.speed/18;gen();
+    if(S.dizzy>0)S.dizzy-=dt;if(S.hurt>0)S.hurt-=dt;
+    S.vy+=2100*dt;S.py+=S.vy*dt;
+    if(S.py>=GROUND&&!overGap()&&S.py<GROUND+40){S.py=GROUND;S.vy=0;S.ground=true;S.air=1}else if(S.py<GROUND||overGap())S.ground=false;
+    if(S.py>GROUND+140){const gp=S.segs.find(s=>s.k==='gap'&&S.wx>s.x-30&&S.wx<s.x+s.w+30);if(gp)S.wx=gp.x+gp.w+24;S.py=GROUND-160;S.vy=0;loseBolets(2,'Al rierol! −2 bolets')}
+    for(const s of S.segs){
+      if(s.k==='rival')s.x+=95*dt;
+      if((s.k==='log'||s.k==='bush'||s.k==='rival')&&!s.hit){const w=s.w||40,h=s.k==='rival'?70:s.h;
+        if(S.wx+14>s.x&&S.wx-14<s.x+w&&S.py>GROUND-h+6){s.hit=1;
+          if(s.k==='log')loseBolets(1,'Ensopegada amb el tronc!');
+          if(s.k==='bush')loseBolets(1,'Esbarzers! Punxen!');
+          if(s.k==='rival')loseBolets(2,"L'altre boletaire t'ha pispat 2 bolets!")}}
+      if(s.k==='pile'&&s.rev&&!s.got&&Math.abs(S.wx-s.x)<26&&S.py>GROUND-70){s.got=true;
+        if(s.type===3){S.dizzy=4;S.streak=0;S.mult=1;toast={s:'Pixacà! En Ferran està marejat',t:1.4,warn:true}}
+        else{S.streak=S.last===s.type?S.streak+1:1;S.last=s.type;S.mult=S.streak>=5?3:S.streak>=3?2:1;S.bolets++;const pts=20*S.mult;score+=pts;pop(`+${pts}${S.mult>1?' ×'+S.mult:''}`,PX,S.py-90)}}
+      if(s.k==='gold'&&!s.got&&Math.hypot(S.wx-s.x,S.py-30-s.y)<46){s.got=true;S.bolets+=3;score+=500;toast={s:'ROVELLÓ DAURAT! +500',t:1.6}}}
+    S.segs=S.segs.filter(s=>s.x>S.wx-300);
+    S.leaves.forEach(l=>{l.t-=dt;l.x+=l.vx*dt;l.y+=l.vy*dt;l.vy+=900*dt});S.leaves=S.leaves.filter(l=>l.t>0);
+    if(S.t>=DUR){if(S.bolets>=4)goInter(`${S.bolets} bolets a la cistella! En Toni ja escalfa la paella.`,'ferran','toni',1.5);
+      else finish(false,'Cistella buida','En Ferran torna del bosc amb només '+S.bolets+' bolets. Avui no hi ha sopar.')}
+    setHud(`${S.bolets} bolets · ${Math.ceil(DUR-S.t)} s`)}
+  function ferranDraw(){const S=F1,cx=S.wx-PX;
+    g.save();if(S.dizzy>0){g.translate(240,360);g.rotate(Math.sin(T*3)*.06);g.translate(-240,-360)}
+    const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#24392c');gr.addColorStop(1,'#3d4a28');g.fillStyle=gr;g.fillRect(-40,-40,W+80,H+80);
+    for(const [k,sp,col,hgt] of [[0,.25,'rgba(14,26,18,.55)',300],[1,.55,'rgba(10,18,12,.8)',420]]){for(let i=-1;i<8;i++){const tx=i*90-((cx*sp)%90)+(k?40:0);g.fillStyle=col;g.beginPath();g.moveTo(tx,GROUND-hgt);g.lineTo(tx-50,GROUND-40);g.lineTo(tx+50,GROUND-40);g.fill()}}
+    // terra
+    const gaps=S.segs.filter(s=>s.k==='gap');let x0=-40;
+    const drawG=(a,b)=>{if(b<=a)return;g.fillStyle='#4a3420';g.fillRect(a,GROUND,b-a,H-GROUND);g.fillStyle='#5f8a3a';g.fillRect(a,GROUND-6,b-a,10)};
+    gaps.sort((a,b)=>a.x-b.x).forEach(gp=>{const a=gp.x-cx,b=gp.x+gp.w-cx;drawG(x0,a);g.fillStyle='#2f6f8f';g.fillRect(a,GROUND+30,b-a,H);g.fillStyle='rgba(255,255,255,.3)';for(let k=0;k<3;k++)g.fillRect(a+((T*60+k*30)%(b-a)),GROUND+40+k*14,16,3);x0=b});drawG(x0,W+40);
+    for(const s of S.segs){const x=s.x-cx;
+      if(s.k==='log'){g.fillStyle='#6a4426';rr(x,GROUND-36,40,36,8);g.fill();g.fillStyle='#a0703e';circ(x+33,GROUND-18,11);g.fill()}
+      if(s.k==='bush'){g.fillStyle='#2f5a2a';for(let k=0;k<4;k++){circ(x+8+k*13,GROUND-14-(k%2)*8,15);g.fill()}g.fillStyle='#7a1f3a';for(let k=0;k<5;k++){circ(x+6+k*11,GROUND-20-(k%3)*6,3);g.fill()}}
+      if(s.k==='pile'){if(!s.rev){g.fillStyle='#a8602a';g.beginPath();g.ellipse(x,GROUND-6,30,16,0,Math.PI,0);g.fill();g.fillStyle='#d08a3a';for(let k=0;k<5;k++){g.beginPath();g.ellipse(x-20+k*10,GROUND-10-(k%2)*6,8,4,k,0,7);g.fill()}
+          if(s.x>S.wx&&s.x<S.wx+340){g.globalAlpha=.6+.4*Math.sin(T*8);txt('?',x,GROUND-40,18,'#ffd27a');g.globalAlpha=1}}
+        else if(!s.got)drawMush(x,GROUND-16,40,s.type===3?BAD:GOOD[s.type])}
+      if(s.k==='rival'){g.fillStyle='#4b5a6a';rr(x,GROUND-52,30,46,6);g.fill();g.fillStyle='#e8c9a0';circ(x+15,GROUND-62,12);g.fill();g.fillStyle='#3a2a1a';g.fillRect(x-2,GROUND-76,34,6);g.fillRect(x+6,GROUND-86,18,10);
+        g.fillStyle='#a8743a';rr(x+24,GROUND-34,18,16,4);g.fill();if(s.x-S.wx<360&&!s.hit)txt('Boletaire rival',x+15,GROUND-100,11,'#ffb43b')}
+      if(s.k==='gold'&&!s.got){g.save();g.shadowColor='#ffd23a';g.shadowBlur=20;drawMush(x,s.y+Math.sin(T*4)*6,46,GOOD[0],0,true);g.restore()}}
+    S.leaves.forEach(l=>{g.fillStyle=l.c;g.globalAlpha=Math.max(0,l.t/.8);g.beginPath();g.ellipse(l.x-cx,l.y,6,3,l.t*8,0,7);g.fill();g.globalAlpha=1});
+    // Ferran
+    if(!(S.hurt>0&&Math.floor(S.hurt*12)%2)){const y=S.py,lg=S.ground?Math.sin(S.legs)*10:6;
+      g.strokeStyle='#2a2a2a';g.lineWidth=7;g.lineCap='round';g.beginPath();g.moveTo(PX-5,y-26);g.lineTo(PX-5+lg,y);g.moveTo(PX+5,y-26);g.lineTo(PX+5-lg,y);g.stroke();
+      g.fillStyle='#4f7a3a';rr(PX-15,y-58,30,36,8);g.fill();g.fillStyle='#a8743a';rr(PX+10,y-44,22,18,5);g.fill();g.strokeStyle='#7a5226';g.lineWidth=3;g.beginPath();g.arc(PX+21,y-44,10,Math.PI,0);g.stroke();
+      drawFace(PX,y-80,20,'ferran');
+      if(S.dizzy>0)for(let k=0;k<3;k++){const a=T*5+k*2.1;txt('★',PX+Math.cos(a)*26,y-104+Math.sin(a)*6,13,'#ffd27a')}}
+    g.restore();
+    // HUD
+    g.fillStyle='rgba(0,0,0,.4)';rr(10,10,W-20,34,10);g.fill();
+    txt(`Bolets ${S.bolets}`,24,27,15,'#f4ede0','left');if(S.mult>1)txt(`Ratxa ×${S.mult}`,240,27,15,'#ffd27a');
+    g.fillStyle='rgba(255,255,255,.2)';rr(W-130,22,110,10,5);g.fill();g.fillStyle='#5fd3b3';rr(W-130,22,110*Math.max(0,1-S.t/DUR),10,5);g.fill();
+    if(S.t<4)txt('Toca els munts de fulles (?) per destapar bolets · toca enlloc més per saltar',240,64,11,'#f4ede0');
   }
 
-  /* ---- Fase 3 ---- */
-  function startGarcia(){ph=3;
-    const tables=[[100,190],[380,190],[240,320],[100,450],[380,450]].map(([x,y],i)=>({x,y,s:'idle',who:['llobete','jordi','xavi','dario','ruben','pel','bere','ferran'][i],type:0,pat:0,max:18,t:0}));
-    G={x:240,y:600,vx:0,vy:0,tray:[],pass:done.slice(),pool:shuffle(done.slice()),total:done.length,wob:0,served:0,dropped:0,expired:0,reqT:.8,pickT:0,bumpT:0,notes:[],falls:[],
-      tables,npc:{x:240,y:250,tx:240,ty:250,t:0},puddles:[{x:170,y:540,r:32},{x:330,y:250,r:28}]};
-    toast={s:'Garcia: "Poso Enrique Iglesias, eh?"',t:2}}
-  function garciaUpdate(dt){const S=G;
-    // moviment
-    let dx=(R_()?1:0)-(L()?1:0),dy=((keys.ArrowDown||keys.s||keys.S)?1:0)-((keys.ArrowUp||keys.w||keys.W)?1:0);
-    if(ptr.down){const ddx=ptr.x-S.x,ddy=ptr.y-S.y,d=Math.hypot(ddx,ddy);if(d>8){const f=Math.min(1,d/60);dx=ddx/d*f;dy=ddy/d*f}else{dx=0;dy=0}}
-    const m=Math.max(1,Math.hypot(dx,dy));let max=240;const inP=S.puddles.find(p=>Math.hypot(S.x-p.x,S.y-p.y)<p.r+10);if(inP)max=150;
-    const tvx=dx/m*max,tvy=dy/m*max,ox=S.vx,oy=S.vy,acc=1100*dt;
-    const ex=tvx-S.vx,ey=tvy-S.vy,el=Math.hypot(ex,ey);if(el<=acc){S.vx=tvx;S.vy=tvy}else{S.vx+=ex/el*acc;S.vy+=ey/el*acc}
-    const a=Math.hypot(S.vx-ox,S.vy-oy)/dt,sens=S.tray.length?(.55+.3*S.tray.length):0;
-    S.wob+=Math.pow(a/1100,2)*dt*.8*sens+(inP?.5*dt*sens:0);S.wob=Math.max(0,S.wob-.45*dt);
-    S.x=clamp(S.x+S.vx*dt,24,W-24);S.y=clamp(S.y+S.vy*dt,96,640);
-    for(const t of S.tables){const d=Math.hypot(S.x-t.x,S.y-t.y);if(d<64){S.x=t.x+(S.x-t.x)/d*64;S.y=t.y+(S.y-t.y)/d*64}}
-    // Llobete passejant
-    const n=S.npc;n.t+=dt;if(Math.hypot(n.tx-n.x,n.ty-n.y)<10){n.tx=rand(40,440);n.ty=rand(120,560)}
-    const nd=Math.hypot(n.tx-n.x,n.ty-n.y)||1;n.x+=(n.tx-n.x)/nd*70*dt+Math.sin(n.t*5)*60*dt;n.y+=(n.ty-n.y)/nd*70*dt;n.x=clamp(n.x,30,450);
-    S.bumpT-=dt;if(S.bumpT<=0&&Math.hypot(S.x-n.x,S.y-n.y)<44){S.bumpT=1.2;S.wob+=S.tray.length?.55:0;const d=Math.hypot(S.x-n.x,S.y-n.y)||1;S.vx+=(S.x-n.x)/d*260;S.vy+=(S.y-n.y)/d*260;toast={s:"En Llobete t'ha empentat!",t:1,warn:true}}
-    // safata
-    if(S.wob>=1&&S.tray.length){const lost=S.tray.pop();S.dropped++;S.wob=.4;S.falls.push({x:S.x+26,y:S.y,type:lost,t:1});toast={s:'Pataplaf! Plat a terra',t:1.1,warn:true}}
-    if(!S.tray.length)S.wob=Math.min(S.wob,.2);
-    // agafar del passe
-    S.pickT-=dt;if(Math.hypot(S.x-240,S.y-655)<70&&S.pass.length&&S.tray.length<3&&S.pickT<=0){S.tray.push(S.pass.shift());S.pickT=.35}
-    // comandes
-    S.reqT-=dt;const free=S.tables.filter(t=>t.s==='idle');
-    if(S.reqT<=0&&S.pool.length&&free.length){const t=choice(free);t.s='want';t.type=S.pool.shift();t.pat=t.max;S.reqT=rand(1.5,3)}
-    const noPlates=!S.pass.length&&!S.tray.length;
-    for(const t of S.tables){
-      if(t.s==='want'){t.pat-=dt*(noPlates?4:1);
-        const k=S.tray.indexOf(t.type);if(k>=0&&Math.hypot(S.x-t.x,S.y-t.y)<82){S.tray.splice(k,1);t.s='eat';t.t=3;S.served++;score+=100+Math.round(t.pat*10);toast={s:'Bon profit!',t:.7}}
-        else if(t.pat<=0){t.s='angry';t.t=1.6;S.expired++}}
-      else if(t.s==='eat'||t.s==='angry'){t.t-=dt;if(t.t<=0)t.s='idle'}}
-    if(Math.random()<dt*2.5)S.notes.push({x:S.x+rand(-14,14),y:S.y-34,t:1.2});S.notes.forEach(q=>{q.t-=dt;q.y-=40*dt});S.notes=S.notes.filter(q=>q.t>0);
-    S.falls.forEach(f=>f.t-=dt);S.falls=S.falls.filter(f=>f.t>0);
-    if(S.served+S.expired>=S.total&&!S.pool.length){const win=S.served>=Math.ceil(S.total*.6);if(win)score+=300;
-      finish(win,win?'Sopar rodó!':'La colla marxa amb gana',win?`${S.served} de ${S.total} plats servits. En Ferran, en Toni i en Garcia fan l'equip perfecte.`:`Només ${S.served} de ${S.total} plats han arribat a taula.`)}
-    setHud(`Servits ${S.served}/${S.total} · Safata ${S.tray.length}/3`)}
-  function garciaDraw(){const S=G;
-    g.fillStyle='#6b4a32';g.fillRect(0,0,W,H);
-    for(let y=80;y<H;y+=40)for(let x=0;x<W;x+=40){g.fillStyle=((x+y)/40)%2?'#74513a':'#6b4a32';g.fillRect(x,y,40,40)}
-    g.fillStyle='#2a1c14';g.fillRect(0,0,W,80);g.save();g.shadowColor='#ffb43b';g.shadowBlur=12;txt('ELS TRAGINERS',240,34,26,'#ffd27a','center','d','400');g.restore();
-    txt('♪ Enrique Iglesias sonant de fons',240,62,12,'#c9b48a');
-    for(const p of S.puddles){g.fillStyle='rgba(240,190,60,.35)';g.beginPath();g.ellipse(p.x,p.y,p.r,p.r*.7,0,0,7);g.fill();txt('moll',p.x,p.y,10,'rgba(255,240,200,.7)')}
-    for(const t of S.tables){g.fillStyle='rgba(0,0,0,.25)';circ(t.x+4,t.y+6,46);g.fill();g.fillStyle='#f2ede2';circ(t.x,t.y,46);g.fill();g.strokeStyle='#c94a3b';g.lineWidth=3;g.setLineDash([6,6]);circ(t.x,t.y,38);g.stroke();g.setLineDash([]);
-      drawFace(t.x,t.y-4,20,t.who);
-      if(t.s==='want'){const has=S.tray.includes(t.type);g.fillStyle=has?'#5fd3b3':'#fffdf6';rr(t.x+18,t.y-74,56,46,10);g.fill();drawMush(t.x+46,t.y-48,28,GOOD[t.type]);
-        g.fillStyle='rgba(0,0,0,.35)';rr(t.x-38,t.y+30,76,7,3);g.fill();g.fillStyle=t.pat/t.max>.35?'#5fd3b3':'#ff6b4a';rr(t.x-38,t.y+30,76*Math.max(0,t.pat)/t.max,7,3);g.fill()}
-      if(t.s==='eat'){drawMush(t.x+22,t.y+18,22,GOOD[1]);txt('Mmm!',t.x,t.y-38,14,'#21140a')}
-      if(t.s==='angry')txt("Me'n vaig!",t.x,t.y-38,14,'#ff6b4a')}
-    // passe
-    g.fillStyle='#2a1c14';rr(150,660,180,56,10);g.fill();g.strokeStyle=Math.hypot(S.x-240,S.y-655)<70?'#5fd3b3':'#ffb43b';g.lineWidth=2;g.stroke();
-    txt('PASSE',240,674,11,'#ffd27a');S.pass.slice(0,6).forEach((p,i)=>{g.fillStyle='#fff';circ(172+i*27,697,11);g.fill();drawMush(172+i*27,699,14,GOOD[p])});
-    if(S.pass.length>6)txt('+'+(S.pass.length-6),318,697,11,'#fff');
-    // Llobete
-    const n=S.npc;drawFace(n.x,n.y,18,'llobete');drawDrink(n.x+20,n.y+8,9,0);
-    // plats caiguts
-    for(const f of S.falls){g.globalAlpha=f.t;g.fillStyle='#fff';circ(f.x,f.y+(1-f.t)*20,12);g.fill();g.globalAlpha=1}
-    // Garcia
-    const bob=Math.sin(T*8)*2;drawFace(S.x,S.y-6+bob,22,'garcia');
-    g.save();g.translate(S.x+30,S.y+4);g.rotate(Math.sin(T*18)*S.wob*.35);g.fillStyle='#c9ccd6';g.beginPath();g.ellipse(0,0,26,10,0,0,7);g.fill();
-    S.tray.forEach((p,i)=>{g.fillStyle='#fff';circ(-12+i*12,-6-i*2,9);g.fill();drawMush(-12+i*12,-5-i*2,11,GOOD[p])});g.restore();
-    S.notes.forEach(q=>{g.globalAlpha=q.t/1.2;txt('♪',q.x,q.y,18,'#ffd27a');g.globalAlpha=1});
-    // equilibri
-    g.fillStyle='rgba(0,0,0,.45)';rr(12,92,130,30,8);g.fill();txt('Equilibri',20,101,10,'#f4ede0','left');
-    g.fillStyle='rgba(255,255,255,.15)';rr(20,108,114,8,4);g.fill();g.fillStyle=S.wob<.5?'#5fd3b3':S.wob<.8?'#ffb43b':'#ff6b4a';rr(20,108,114*Math.min(1,S.wob),8,4);g.fill()}
+  /* ================= TONI: cuina en ritme ================= */
+  let R=null;
+  const LX=[96,240,384],HIT=610,SPD=360,ING=['Oli','All','Bolets'];
+  function startToni(){ph=2;setHint('Toca el carril (o A · S · D) quan l\'ingredient arribi a la línia, al ritme de la música.');
+    const notes=[];let lastL=-1,run=0;
+    for(let b=8;b<160;b++){const sec=Math.floor((b-8)/32);let on=false;
+      if(sec===0)on=b%2===0;else if(sec===1)on=b%2===0||Math.random()<.3;else on=Math.random()<(sec===2?.8:.9);
+      if(!on)continue;let l=Math.floor(Math.random()*3);if(l===lastL){run++;if(run>=2){l=(l+1+Math.floor(Math.random()*2))%3;run=0}}else run=0;lastL=l;
+      const t=BEAT0+b*BEAT;notes.push({t,l,hit:0});if(sec>=3&&Math.random()<.18){notes.push({t,l:(l+1+Math.floor(Math.random()*2))%3,hit:0})}}
+    R={notes,t0:performance.now(),combo:0,best:0,heat:.3,acc:0,judged:0,flash:[0,0,0],end:notes[notes.length-1].t+1.6,smoke:[],lastBeat:-1,say:null};
+    try{music.pause()}catch(e){}
+    howTo('toni','toni',()=>{R.t0=performance.now();try{music.currentTime=0;const p=music.play();if(p)p.catch(()=>{})}catch(e){}})}
+  function rNow(){if(!music.paused&&music.currentTime>0)return music.currentTime;return (performance.now()-R.t0)/1000}
+  function judge(l){const t=rNow();R.flash[l]=.15;let best=null,bd=1;
+    for(const n of R.notes){if(n.hit||n.l!==l)continue;const d=Math.abs(n.t-t);if(d<bd){bd=d;best=n}}
+    if(!best||bd>.17){R.combo=0;R.heat=Math.max(0,R.heat-.04);pop('Fora de temps',LX[l],HIT-60,'#ff6b4a');return}
+    best.hit=1;R.judged++;R.combo++;R.best=Math.max(R.best,R.combo);
+    const q=bd<.06?1:bd<.115?.7:.4;R.acc+=q;const pts=Math.round((q===1?100:q===.7?60:30)*(1+Math.floor(R.combo/10)*.5));score+=pts;
+    R.heat=Math.min(1,R.heat+.035);pop(q===1?'PERFECTE':q===.7?'BÉ':'JUST',LX[l],HIT-60,q===1?'#5fd3b3':'#ffd27a');
+    if(R.combo%15===0)R.say={s:choice(['Així, així!','Això és cuina de veritat!','Oli, all i amor!']),t:1.6}}
+  function stars(){const a=R.acc/R.notes.length;return a>.85?5:a>.7?4:a>.55?3:a>.38?2:1}
+  function toniUpdate(dt){const t=rNow();
+    for(const n of R.notes){if(!n.hit&&t-n.t>.17){n.hit=-1;R.judged++;R.combo=0;R.heat=Math.max(0,R.heat-.07);R.smoke.push({x:240+rand(-40,40),y:300,t:1});if(Math.random()<.25)R.say={s:'Ai, que es crema!',t:1.2}}}
+    R.flash=R.flash.map(f=>Math.max(0,f-dt));R.smoke.forEach(s=>{s.t-=dt;s.y-=50*dt});R.smoke=R.smoke.filter(s=>s.t>0);if(R.say)R.say.t-=dt;
+    if(t>R.end){const st=stars();R.stars=st;score+=st*150;goInter(`Plat de ${st} estrelles! ${'★'.repeat(st)}  Ara serveix en Garcia.`,'toni','garcia',2.5)}
+    setHud(`Combo ${R.combo} · Millor ${R.best}`)}
+  function drawIng(l,x,y,s){if(l===0){g.fillStyle='#d6b02a';rr(x-s*.22,y-s*.45,s*.44,s*.8,s*.12);g.fill();g.fillStyle='#4a6a2a';g.fillRect(x-s*.08,y-s*.62,s*.16,s*.2);g.fillStyle='rgba(255,255,255,.6)';g.fillRect(x-s*.14,y-s*.2,s*.08,s*.4)}
+    if(l===1){g.fillStyle='#f4efe4';g.beginPath();g.ellipse(x,y,s*.38,s*.32,0,0,7);g.fill();g.strokeStyle='#d8cdb8';g.lineWidth=2;g.beginPath();g.moveTo(x,y-s*.32);g.lineTo(x,y+s*.3);g.moveTo(x-s*.18,y-s*.26);g.quadraticCurveTo(x-s*.28,y,x-s*.15,y+s*.28);g.stroke();g.fillStyle='#f4efe4';g.beginPath();g.moveTo(x-5,y-s*.3);g.lineTo(x,y-s*.5);g.lineTo(x+5,y-s*.3);g.fill()}
+    if(l===2)drawMush(x,y+s*.1,s*.9,GOOD[0])}
+  function toniDraw(){const t=rNow();
+    g.fillStyle='#1f1a17';g.fillRect(0,0,W,H);
+    g.fillStyle='#2a2320';for(let y=0;y<H;y+=36)for(let x=(y/36%2)*24;x<W;x+=48)g.fillRect(x,y,44,32);
+    // paella
+    const hb=R.heat;for(let k=0;k<9;k++){const fx=240-80+k*20,h=20+hb*60*(.6+.4*Math.sin(T*12+k*1.7));g.fillStyle=k%2?'#ffb43b':'#ff5a2a';g.beginPath();g.moveTo(fx-10,330);g.quadraticCurveTo(fx,330-h,fx+10,330);g.fill()}
+    g.fillStyle='#555';g.fillRect(320,260,110,14);g.fillStyle='#16171c';g.beginPath();g.ellipse(240,270,120,44,0,0,7);g.fill();g.fillStyle='#3a3b44';g.beginPath();g.ellipse(240,264,104,34,0,0,7);g.fill();
+    for(let k=0;k<6;k++)drawMush(190+k*20,266+Math.sin(T*10+k)*2*(hb>.5?1:0),22,GOOD[k%3]);
+    R.smoke.forEach(s=>{g.fillStyle=`rgba(120,120,120,${s.t*.5})`;circ(s.x,s.y-(1-s.t)*40,14+(1-s.t)*14);g.fill()});
+    drawFace(56,64,30,'toni');txt(`${Math.round(R.heat*100)}°`,56,112,12,'#ffd27a');
+    g.fillStyle='rgba(255,255,255,.12)';rr(100,58,180,10,5);g.fill();g.fillStyle=mixc('#5fd3b3','#ff6b4a',R.heat);rr(100,58,180*R.heat,10,5);g.fill();txt('Foc de la paella',100,82,11,'#a6abc8','left');
+    if(R.combo>=5)txt(`${R.combo}× COMBO`,380,64,20,'#ffd27a','center','d','400');
+    if(R.say&&R.say.t>0){g.font='700 13px Rubik, system-ui, sans-serif';const w=g.measureText(R.say.s).width+20;g.fillStyle='#fff';rr(96,100,w,26,9);g.fill();txt(R.say.s,96+w/2,113,13,'#222')}
+    // carrils
+    const beatPh=((t-BEAT0)/BEAT)%1,pulse=t>BEAT0?Math.max(0,1-beatPh*4):0;
+    for(let l=0;l<3;l++){const x=LX[l];g.fillStyle=`rgba(255,255,255,${.04+R.flash[l]*1.5})`;g.fillRect(x-62,340,124,H-340);
+      g.strokeStyle=`rgba(255,180,59,${.4+pulse*.6})`;g.lineWidth=3+pulse*3;circ(x,HIT,34);g.stroke();
+      g.globalAlpha=.35;drawIng(l,x,HIT,44);g.globalAlpha=1;txt(ING[l],x,HIT+52,12,'#a6abc8');txt(['A','S','D'][l],x,HIT+68,10,'rgba(255,255,255,.35)')}
+    for(const n of R.notes){if(n.hit)continue;const y=HIT-(n.t-t)*SPD;if(y<330||y>H+40)continue;g.fillStyle='rgba(0,0,0,.35)';circ(LX[n.l],y,28);g.fill();drawIng(n.l,LX[n.l],y,46)}
+    g.fillStyle='rgba(255,255,255,.12)';g.fillRect(0,HIT-1,W,2);
+    const prog=clamp(t/R.end,0,1);g.fillStyle='rgba(255,255,255,.15)';rr(20,H-14,W-40,6,3);g.fill();g.fillStyle='#ffb43b';rr(20,H-14,(W-40)*prog,6,3);g.fill();
+  }
 
+  /* ================= GARCIA: cambrer equilibrista ================= */
+  let G=null;const GX=150,FLOOR=640,TRIP=1250;
+  const EV=[['llobete',"En Llobete s'aixeca de cop!"],['dario','En Dario pica la taula! Mecàgum!'],['bere','En Bere mou la cadira!'],['xavi','En Xavi arriba tard i et creua!']];
+  function startGarcia(){ph=3;setHint('Mantén premut a l\'esquerra o a la dreta (o ← →) per redreçar la torre de plats.');
+    const total=clamp(Math.ceil(F1.bolets/2),4,10);
+    G={total,left:total,served:0,lost:0,n:Math.min(2,total),mode:'load',d:0,th:0,w:0,evs:[],uh:0,falls:[],tip:1+(R?R.stars:3)*.1,cheer:0,step:0};
+    toast={s:'Garcia: "Poso Enrique Iglesias, eh?"',t:2};howTo('garcia','garcia')}
+  function btn(x,y,w,h){return {x,y,w,h}}
+  const B_MIN=btn(110,470,70,64),B_PLUS=btn(300,470,70,64),B_GO=btn(140,560,200,64);
+  const inB=(b,x,y)=>x>b.x&&x<b.x+b.w&&y>b.y&&y<b.y+b.h;
+  function garciaDown(x,y){if(G.mode!=='load')return;
+    if(inB(B_MIN,x,y))G.n=Math.max(1,G.n-1);else if(inB(B_PLUS,x,y))G.n=Math.min(5,G.left,G.n+1);
+    else if(inB(B_GO,x,y)){G.mode='walk';G.d=0;G.th=rand(-.03,.03);G.w=0;G.evs=[];let p=260;while(p<TRIP-200){const e=choice(EV);G.evs.push({d:p,who:e[0],msg:e[1],dir:Math.random()<.5?-1:1,done:0});p+=rand(300,480)}}}
+  function garciaKey(k){if(G.mode!=='load')return;if(k==='ArrowUp')G.n=Math.min(5,G.left,G.n+1);if(k==='ArrowDown')G.n=Math.max(1,G.n-1);if(k===' '||k==='Enter')garciaDown(B_GO.x+5,B_GO.y+5)}
+  function garciaUpdate(dt){const S=G;S.cheer=Math.max(0,S.cheer-dt);if(S.uh>0)S.uh-=dt;
+    S.falls.forEach(f=>{f.t-=dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=1200*dt;if(f.y>FLOOR){f.y=FLOOR;f.vy=0;f.vx*=.5}});S.falls=S.falls.filter(f=>f.t>0);
+    if(S.mode==='walk'){
+      S.d+=150*dt;S.step+=dt*7;
+      let inp=(R_()?1:0)-(L()?1:0);if(ptr.down)inp=clamp((ptr.x-240)/90,-1,1);
+      const inst=1.1+S.n*.5,noise=Math.sin(S.step)*.3*(.4+S.n*.25)+rand(-1,1)*.5;
+      const acc=inst*Math.sin(S.th)+noise+inp*6-4*S.w;S.w+=acc*dt;S.th+=S.w*dt;
+      for(const e of S.evs){if(!e.done&&S.d>=e.d){e.done=1;S.w+=e.dir*(.55+S.n*.1);toast={s:e.msg,t:1.2,warn:true}}}
+      if(Math.abs(S.th)>1){S.mode='fall';S.lost+=S.n;S.left-=S.n;S.uh=1.8;for(let i=0;i<S.n;i++)S.falls.push({x:GX+40+Math.sin(S.th)*i*16,y:FLOOR-200-i*16,vx:Math.sign(S.th)*rand(80,220),vy:rand(-200,0),t:1.6});setTimeout(()=>{if(G===S)next()},1700)}
+      else if(S.d>=TRIP){S.mode='arrive';S.served+=S.n;S.left-=S.n;const pts=Math.round(100*S.n*S.n*S.tip);score+=pts;S.cheer=1.8;toast={s:`${S.n} plats servits! +${pts}`,t:1.4};setTimeout(()=>{if(G===S)next()},1600)}}
+    setHud(`Servits ${S.served}/${S.total} · Caiguts ${S.lost}`)}
+  function next(){const S=G;if(S.left<=0){const win=S.served>=Math.ceil(S.total*.5);if(win)score+=300;
+      finish(win,win?'Sopar rodó!':'La colla marxa amb gana',win?`${S.served} de ${S.total} plats a taula. En Ferran, en Toni i en Garcia fan l'equip perfecte.`:`Només ${S.served} de ${S.total} plats han arribat a taula. La resta, a terra.`);return}
+    S.mode='load';S.n=Math.min(S.n,S.left);S.th=0;S.w=0}
+  function garciaDraw(){const S=G,cam=S.mode==='load'?0:S.d;
+    g.fillStyle='#4a2f22';g.fillRect(0,0,W,H);g.fillStyle='#5b3a2a';for(let x=-((cam*.5)%120);x<W;x+=120)g.fillRect(x,90,60,FLOOR-90);
+    g.fillStyle='#2a1c14';g.fillRect(0,0,W,80);g.save();g.shadowColor='#ffb43b';g.shadowBlur=12;txt('ELS TRAGINERS',240,32,26,'#ffd27a','center','d','400');g.restore();txt('♪ Enrique Iglesias sonant de fons',240,62,12,'#c9b48a');
+    g.fillStyle='#7a5a3a';g.fillRect(0,FLOOR,W,H-FLOOR);g.fillStyle='rgba(0,0,0,.15)';for(let x=-(cam%60);x<W;x+=60)g.fillRect(x,FLOOR,2,H-FLOOR);
+    // taules de pas i esdeveniments
+    if(S.mode!=='load'){for(const e of S.evs){const x=GX+(e.d-S.d)+60;if(x<-80||x>W+80)continue;
+        g.fillStyle='#e9e2d2';g.fillRect(x-40,FLOOR-70,80,10);g.fillStyle='#5a3a26';g.fillRect(x-34,FLOOR-60,6,60);g.fillRect(x+28,FLOOR-60,6,60);
+        const up=e.done&&S.d-e.d<120?-24:0;drawFace(x,FLOOR-100+up,20,e.who);
+        if(!e.done&&e.d-S.d<170){g.fillStyle='#ff6b4a';rr(x+14,FLOOR-150,24,26,6);g.fill();txt('!',x+26,FLOOR-137,16,'#fff')}}
+      const dx=GX+(TRIP-S.d)+80;if(dx<W+150){g.fillStyle='#e9e2d2';g.fillRect(dx-60,FLOOR-70,140,10);['llobete','jordi','ruben','pel'].forEach((w,i)=>drawFace(dx-44+i*36,FLOOR-96-(S.cheer>0?Math.abs(Math.sin(T*10+i))*12:0),16,w));if(S.cheer>0)txt('Bravo, Garcia!',dx+10,FLOOR-140,15,'#ffd27a')}}
+    else{g.fillStyle='#2a1c14';rr(20,FLOOR-130,110,130,8);g.fill();txt('PASSE',75,FLOOR-112,12,'#ffd27a');for(let i=0;i<Math.min(S.left,8);i++){g.fillStyle='#fff';g.beginPath();g.ellipse(75,FLOOR-20-i*10,34,6,0,0,7);g.fill()}}
+    // Garcia
+    const st=S.mode==='walk'?Math.sin(S.step)*9:0;g.strokeStyle='#1d1d22';g.lineWidth=9;g.lineCap='round';g.beginPath();g.moveTo(GX-6,FLOOR-60);g.lineTo(GX-6+st,FLOOR);g.moveTo(GX+6,FLOOR-60);g.lineTo(GX+6-st,FLOOR);g.stroke();
+    g.fillStyle='#f4f1ea';rr(GX-20,FLOOR-124,40,68,10);g.fill();g.fillStyle='#2a2a30';g.fillRect(GX-20,FLOOR-80,40,24);
+    g.strokeStyle='#f4f1ea';g.lineWidth=9;g.beginPath();g.moveTo(GX+14,FLOOR-110);g.lineTo(GX+40,FLOOR-150);g.lineTo(GX+42,FLOOR-176);g.stroke();
+    drawFace(GX,FLOOR-148,22,'garcia');
+    // torre de plats
+    if(S.mode==='walk'||S.mode==='arrive'||S.mode==='load'){g.save();g.translate(GX+42,FLOOR-180);g.rotate(S.mode==='load'?0:S.th);g.fillStyle='#c9ccd6';g.beginPath();g.ellipse(0,0,46,7,0,0,7);g.fill();
+      for(let i=0;i<S.n;i++){const y=-10-i*20;g.fillStyle='#fff';g.beginPath();g.ellipse(0,y,36,7,0,0,7);g.fill();g.strokeStyle='#ddd';g.lineWidth=1;g.stroke();drawMush(-10,y-2,16,GOOD[i%3]);drawMush(10,y-2,14,GOOD[(i+1)%3])}g.restore()}
+    S.falls.forEach(f=>{g.fillStyle='#fff';g.save();g.translate(f.x,f.y);g.rotate(f.t*6);g.beginPath();g.ellipse(0,0,30,6,0,0,7);g.fill();g.restore()});
+    if(S.uh>0){txt('UUUUUUH!',240,240,40,'#ff6b4a','center','d','400');txt('La colla xiula. Plats a terra.',240,282,15,'#f4ede0')}
+    // equilibri
+    if(S.mode==='walk'){g.fillStyle='rgba(0,0,0,.45)';rr(300,96,166,64,10);g.fill();txt('Equilibri',383,110,11,'#f4ede0');
+      g.lineWidth=8;g.strokeStyle='rgba(255,255,255,.15)';g.beginPath();g.arc(383,154,34,Math.PI*1.15,Math.PI*1.85);g.stroke();
+      g.strokeStyle='#ff6b4a';g.beginPath();g.arc(383,154,34,Math.PI*1.15,Math.PI*1.27);g.stroke();g.beginPath();g.arc(383,154,34,Math.PI*1.73,Math.PI*1.85);g.stroke();
+      const a=-Math.PI/2+clamp(S.th/1,-1,1)*Math.PI*.35;g.strokeStyle='#ffd27a';g.lineWidth=3;g.beginPath();g.moveTo(383,154);g.lineTo(383+Math.cos(a)*32,154+Math.sin(a)*32);g.stroke();
+      g.fillStyle='rgba(255,255,255,.15)';rr(20,100,150,8,4);g.fill();g.fillStyle='#5fd3b3';rr(20,100,150*Math.min(1,S.d/TRIP),8,4);g.fill();txt('Fins a la taula',20,120,11,'#f4ede0','left')}
+    if(S.mode==='load'){g.fillStyle='rgba(20,14,10,.82)';rr(70,330,340,320,16);g.fill();
+      txt('Quants plats portes?',240,370,20,'#ffd27a','center','d','400');txt(`Queden ${S.left} · Més plats = més punts (×${S.n})`,240,404,13,'#f4ede0');
+      txt(String(S.n),240,502,54,'#f4ede0','center','d','400');
+      for(const [b,s] of [[B_MIN,'−'],[B_PLUS,'+']]){g.fillStyle='#3d4366';rr(b.x,b.y,b.w,b.h,12);g.fill();txt(s,b.x+b.w/2,b.y+b.h/2,30,'#fff')}
+      g.fillStyle='#ffb43b';rr(B_GO.x,B_GO.y,B_GO.w,B_GO.h,14);g.fill();txt('SOM-HI!',240,B_GO.y+32,22,'#2a1a05','center','d','400');
+      txt(`Propina pel plat del Toni: ×${S.tip.toFixed(1)}`,240,350+282,11,'#a6abc8')}
+  }
+
+  setHint('Toca els munts de fulles per destapar bolets i toca enlloc més (o espai) per saltar. Doble salt permès.');
   return {
-    hint:'Ferran: arrossega la cistella. Toni: arrossega bolets i plats. Garcia: arrossega per caminar sense que caigui la safata.',
-    down(x,y){if(inter>0||over)return;if(ph===2)toniDown(x,y)},
-    move(x,y){if(drag){drag.x=x;drag.y=y}},
-    up(x,y){if(ph===2)toniUp(x,y)},
-    update(dt){T+=dt;if(toast)toast.t-=dt;if(over)return;
+    hint:'Toca els munts de fulles per destapar bolets i toca enlloc més (o espai) per saltar. Doble salt permès.',
+    down(x,y){if(inter>0||over)return;if(ph===1)ferranDown(x,y);else if(ph===2)judge(x<168?0:x<312?1:2);else if(ph===3)garciaDown(x,y)},
+    key(k){if(inter>0||over)return;if(ph===1)ferranKey(k);else if(ph===2){const m={a:0,A:0,ArrowLeft:0,s:1,S:1,ArrowDown:1,d:2,D:2,ArrowRight:2,j:0,k:1,l:2}[k];if(m!==undefined)judge(m)}else if(ph===3)garciaKey(k)},
+    update(dt){T+=dt;if(toast)toast.t-=dt;pops.forEach(p=>{p.t-=dt;p.y-=40*dt});pops=pops.filter(p=>p.t>0);if(over)return;
       if(inter>0){inter-=dt;if(inter<=0){if(ph===1.5)startToni();else if(ph===2.5)startGarcia()}return}
-      if(ph===1){if(L())bx-=420*dt;if(R_())bx+=420*dt;if(ptr.down)bx+=clamp(ptr.x-bx,-600*dt,600*dt);bx=clamp(bx,50,430);
-        spT-=dt;if(spT<=0){spT=rand(.4,.65);const bad=Math.random()<.26;items.push({x:rand(40,440),y:-30,vy:rand(150,250),m:bad?BAD:choice(GOOD),w:rand(2,4)})}
-        for(const it of items){it.y+=it.vy*dt;if(!it.got&&it.y>612&&it.y<650&&Math.abs(it.x-bx)<52){it.got=1;
-          if(it.m.bad){if(count>0){count--;const k=caught.indexOf(Math.max(...caught));caught[k]--}toast={s:'Pixacà! Aquest no es menja',t:1.1,warn:true}}
-          else{count++;caught[it.m.i]++;score+=20}}}
-        items=items.filter(i=>!i.got&&i.y<H+40);
-        if(count>=10){items=[];goInter('En Ferran porta els 10 bolets al Toni','ferran','toni',1.5)}
-        setHud(`${count} / 10 bolets`)}
-      if(ph===2)toniUpdate(dt);
-      if(ph===3)garciaUpdate(dt);
-    },
+      if(ph===1)ferranUpdate(dt);else if(ph===2)toniUpdate(dt);else if(ph===3)garciaUpdate(dt)},
     draw(){
-      if(ph<2){
-        const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#1d2a22');gr.addColorStop(1,'#2e3a22');g.fillStyle=gr;g.fillRect(0,0,W,H);
-        for(let i=0;i<7;i++){const tx=(i*83+20)%W;g.fillStyle='rgba(10,20,14,.7)';g.beginPath();g.moveTo(tx,80+i%3*30);g.lineTo(tx-48,420);g.lineTo(tx+48,420);g.fill();g.fillStyle='#3b2a1c';g.fillRect(tx-6,420,12,60)}
-        g.fillStyle='#4a3a22';g.fillRect(0,660,W,60);
-        for(const it of items)drawMush(it.x,it.y,34,it.m,Math.sin(T*it.w)*.3);
-        g.fillStyle='#a8743a';g.beginPath();g.moveTo(bx-52,615);g.lineTo(bx+52,615);g.lineTo(bx+40,660);g.lineTo(bx-40,660);g.closePath();g.fill();
-        g.strokeStyle='#7a5226';g.lineWidth=4;g.beginPath();g.arc(bx,615,40,Math.PI,0);g.stroke();
-        let k=0;caught.forEach((n,i)=>{for(let j=0;j<n&&k<10;j++,k++)drawMush(bx-36+(k%5)*18,628+Math.floor(k/5)*12,16,GOOD[i])});
-        drawFace(bx,692,20,'ferran');
-        txt('Recull bolets bons · evita els pixacans',240,30,14,'#f4ede0');
-      }
-      if(ph>=2&&ph<3)toniDraw();
-      if(ph>=3)garciaDraw();
-      if(inter>0){g.fillStyle='rgba(10,12,20,.85)';g.fillRect(0,0,W,H);drawFace(170,300,44,interFrom);txt('→',240,300,30,'#ffb43b','center','d','400');drawFace(310,300,44,interTo);txt(interTxt,240,392,18,'#f4ede0')}
+      if(ph<2)ferranDraw();else if(ph<3)toniDraw();else garciaDraw();
+      pops.forEach(p=>{g.globalAlpha=Math.min(1,p.t*2);txt(p.s,p.x,p.y,15,p.c);g.globalAlpha=1});
+      if(inter>0){g.fillStyle='rgba(10,12,20,.88)';g.fillRect(0,0,W,H);drawFace(170,300,44,interFrom);txt('→',240,300,30,'#ffb43b','center','d','400');drawFace(310,300,44,interTo);
+        g.font='700 17px Rubik, system-ui, sans-serif';const words=interTxt.split(' ');let line='',yy=392;for(const w of words){if(g.measureText(line+w).width>400){txt(line.trim(),240,yy,17,'#f4ede0');line='';yy+=26}line+=w+' '}txt(line.trim(),240,yy,17,'#f4ede0')}
       toastDraw(toast);
     }
   };
 }
 
 /* ---------- Bucle ---------- */
-let last=0;function loop(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;if(scene){scene.update(dt);scene.draw()}requestAnimationFrame(loop)}requestAnimationFrame(loop);
+let last=0;function loop(t){const dt=Math.min(.033,(t-last)/1000||0);last=t;if(scene){if(!paused)scene.update(dt);scene.draw()}requestAnimationFrame(loop)}requestAnimationFrame(loop);
 
 
 /* ---------- Música ---------- */
@@ -615,6 +645,33 @@ function syncMute(){const b=$('mute');b.textContent=muted?'♪ Sense so':'♪ So
 function playMusic(){if(!muted)music.play().catch(()=>{})}
 $('mute').onclick=()=>{muted=!muted;store.muted=muted;save();syncMute();if(!muted)playMusic()};
 syncMute();
+
+/* ---------- Instruccions ---------- */
+let paused=false,curHow=null;const howSeen=new Set();
+const HOW={
+  bubble:{t:'Sortida del Terra y Mar',goal:"Ajunta 3 o més gerres o cubates del mateix tipus perquè caiguin. Neteja-les totes abans que arribin a la línia vermella.",
+    steps:["Posa el dit a la pantalla i arrossega'l: la línia de punts mostra on apuntes.","Aixeca el dit per disparar. La gerra pot rebotar a les parets.","Les gerres que queden penjant sense res a sobre també cauen i donen punts extra.","Cada 6 tirs sense fer caure res, el sostre baixa una fila."]},
+  drive:{t:'Tornada per Igualada',goal:'Arriba a casa (1.500 m) sense gastar les 3 vides.',
+    steps:["Mantén el dit a la pantalla i arrossega'l a esquerra o dreta: el cotxe segueix el dit.","Esquiva els cotxes i els cons.","Compte amb la moto del Pel i en Jordi: cau i rellisca per la carretera.","La barra de dalt indica quant falta per arribar."]},
+  ferran:{t:'1 · Ferran al bosc',goal:'Aplega tants bolets com puguis en 55 segons. En necessites com a mínim 4.',
+    steps:["En Ferran corre sol. Toca la pantalla per saltar; toca de nou a l'aire per fer doble salt.","Els munts de fulles amb ? amaguen bolets: toca el munt per destapar-lo i després passa-hi per sobre per agafar-lo.","No agafis el pixacà (vermell amb punts blancs): en Ferran es mareja i salta menys.","Salta troncs, esbarzers, rierols i el boletaire rival, que et pispa bolets."],
+    tip:'3 bolets iguals seguits = punts ×2. 5 seguits = ×3. Al final apareix un rovelló daurat.'},
+  toni:{t:'2 · Toni a la cuina',goal:'Cuina al ritme de la música. Com més encerts, millor surt el plat (d\'1 a 5 estrelles).',
+    steps:['Els ingredients baixen per 3 carrils: Oli, All i Bolets.','Toca el carril just quan l\'ingredient passa pel cercle de baix.','Segueix el ritme: els ingredients cauen sobre el compàs de la cançó.','Si encadenes encerts, el combo multiplica els punts.'],
+    tip:'Juga amb el so activat: ajuda molt a seguir el ritme.'},
+  garcia:{t:'3 · Garcia, cambrer equilibrista',goal:'Porta els plats fins a la taula del fons sense que caigui la torre.',
+    steps:['Abans de cada viatge, tria quants plats portes amb − i + i prem SOM-HI. Més plats = molts més punts, però més risc.','Mentre camina, la torre s\'inclina. Si s\'inclina a la dreta, mantén el dit a l\'esquerra de la pantalla, i al revés.','Com més a prop del centre toques, més suau és la correcció. Millor tocs petits que grans.','Quan surt un ! sobre una taula, prepara\'t: algú de la colla et donarà un cop.'],
+    tip:'Mira el rellotge d\'equilibri de dalt a la dreta: si l\'agulla entra al vermell, corregeix ràpid.'}
+};
+function howTo(key,who,onGo,force){curHow={key,who};if(howSeen.has(key)&&!force){onGo&&onGo();return}howSeen.add(key);paused=true;const h=HOW[key];
+  const extra=who&&key!==who?CH.flatMap(c=>c.pick||[]).find(p=>p[0]===who):null;
+  modal(`<div class="how card" style="padding:0;border:0;background:none"><div class="head"><img src="${AV[who]||''}" alt=""><div><small>Com es juga</small><b>${h.t}</b></div></div>
+    <div class="goal"><strong>Objectiu:</strong> ${h.goal}</div><ol>${h.steps.map(s=>`<li><span>${s}</span></li>`).join('')}</ol>
+    ${extra?`<div class="tip"><strong>${F[who].n}:</strong> ${extra[2]}</div>`:''}${h.tip?`<div class="tip">${h.tip}</div>`:''}
+    <button id="mGo">Començar</button></div>`);
+  $('mcard').classList.add('how');
+  $('mGo').onclick=()=>{closeModal();paused=false;onGo&&onGo()};$('mGo').focus()}
+$('help').onclick=()=>{if(!curHow||!$('modal').hidden)return;const k=curHow.key;if(k==='toni')try{music.pause()}catch(e){}howTo(k,curHow.who,()=>{if(k==='toni')try{music.play().catch(()=>{})}catch(e){}},true)};
 /* ---------- Navegació ---------- */
 const AV={};
 function show(id){['home','select','game'].forEach(s=>$(s).hidden=s!==id);if(id!=='game')scene=null}
@@ -633,11 +690,12 @@ $('picks').addEventListener('click',e=>{const b=e.target.closest('button.pick');
   if(w==='bere'){modal(`<div class="big warn">Estàs segur?</div><p>És una elecció molt perillosa!</p><div class="row"><button id="mYes">Sí, amb el Bere</button><button class="ghost" id="mNo">No, millor no</button></div>`);$('mYes').onclick=()=>{closeModal();start('bere')};$('mNo').onclick=closeModal;$('mYes').focus()}
   else start(w)});
 $('selBack').onclick=renderHome;
-function start(who){curWho=who;playMusic();const c=CH[curCh];$('gTitle').textContent=c.title;show('game');fit();requestAnimationFrame(fit);
-  scene=c.id==='bubble'?BubbleGame(who):c.id==='drive'?DriveGame(who):MushGame();$('hint').textContent=scene.hint}
+function start(who){curWho=who;setHud('');playMusic();const c=CH[curCh];$('gTitle').textContent=c.title;show('game');fit();requestAnimationFrame(fit);
+  scene=c.id==='bubble'?BubbleGame(who):c.id==='drive'?DriveGame(who):MushGame();$('hint').textContent=scene.hint;
+  if(c.id==='mush')howTo('ferran','ferran');else howTo(c.id,who)}
 $('quit').onclick=()=>{closeModal();renderHome()};
 function modal(html){$('mcard').innerHTML=html;$('modal').hidden=false}
-function closeModal(){$('modal').hidden=true}
+function closeModal(){$('modal').hidden=true;$('mcard').classList.remove('how');paused=false}
 function endGame(id,win,score,title,msg){if(win&&(!store[id]||score>store[id])){store[id]=score;save()}
   const next=win&&curCh<CH.length-1;
   modal(`<div class="big ${win?'':'warn'}">${title}</div><p>${msg}</p><div class="score">${score} punts${store[id]?` · rècord ${store[id]}`:''}</div><div class="row"><button id="mAgain">Torna-hi</button>${next?'<button class="ghost" id="mNext">Capítol següent</button>':''}<button class="ghost" id="mMap">Mapa</button></div>`);
